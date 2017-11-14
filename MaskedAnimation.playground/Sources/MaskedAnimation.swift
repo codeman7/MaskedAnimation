@@ -1,4 +1,33 @@
 import UIKit
+struct AnimationProperties {
+  let from: Any
+  let to: Any
+  let duration: Double
+  let keyPath: String
+  
+  static func cornerAnim(from: Any, to: Any, duration: Double) -> AnimationProperties {
+    return AnimationProperties(from: from,
+                               to: to,
+                               duration: duration,
+                               keyPath: #keyPath(CAShapeLayer.cornerRadius))
+  }
+  
+  static func boundsAnim(from: Any, to: Any, duration: Double) -> AnimationProperties {
+    return AnimationProperties(from: from,
+                               to: to,
+                               duration: duration,
+                               keyPath: "bounds.size")
+  }
+  
+  static func pathAnim(from: Any, to: Any, duration: Double) -> AnimationProperties {
+    return AnimationProperties(from: from,
+                               to: to,
+                               duration: duration,
+                               keyPath: #keyPath(CAShapeLayer.path))
+    
+  }
+}
+
 open class MaskedAnimation: CALayer {
   /// The view that is the initial starting point
   var startView: MDView = MDView()
@@ -105,10 +134,12 @@ open class MaskedAnimation: CALayer {
     superView.layer.addSublayer(animationLayer)
     startView.removeFromSuperview()
     if let startColor = startView.backgroundColor, let endColor = endView.backgroundColor {
-      let colorAnim: CABasicAnimation = createAnim(from: startColor.cgColor,
-                                                   to: endColor.cgColor,
-                                                   withDuration: totalTime,
-                                                   andKeyPath: #keyPath(CAShapeLayer.backgroundColor))
+      let animProperties: AnimationProperties =
+        AnimationProperties(from: startColor.cgColor,
+                            to: endColor.cgColor,
+                            duration: totalTime,
+                            keyPath: #keyPath(CAShapeLayer.backgroundColor))
+      let colorAnim: CABasicAnimation = createAnim(withProperties: animProperties)
       animationLayer.add(colorAnim, forKey: #keyPath(CAShapeLayer.backgroundColor))
     }
     animateShadows()
@@ -125,23 +156,25 @@ open class MaskedAnimation: CALayer {
     CATransaction.setCompletionBlock {
       self.animateToLarger()
     }
-    let boundsAnim: CABasicAnimation = createAnim(from: startView.frame.size,
-                                                  to: size,
-                                                  withDuration: firstAnimationDuration,
-                                                  andKeyPath: "bounds.size")
+    let boundsProp: AnimationProperties =
+      AnimationProperties.boundsAnim(from: startView.frame.size,
+                                     to: size,
+                                     duration: firstAnimationDuration)
+    let boundsAnim: CABasicAnimation = createAnim(withProperties: boundsProp)
     animationLayer.add(boundsAnim, forKey: "bounds.size")
-    let cornerAnim: CABasicAnimation = createAnim(from: startView.layer.cornerRadius,
-                                                  to: smaller / 2,
-                                                  withDuration: firstAnimationDuration,
-                                                  andKeyPath: #keyPath(CAShapeLayer.cornerRadius))
+    let colorProp: AnimationProperties =
+      AnimationProperties.cornerAnim(from: startView.layer.cornerRadius,
+                                     to: smaller / 2,
+                                     duration: firstAnimationDuration)
+    let cornerAnim: CABasicAnimation = createAnim(withProperties: colorProp)
     animationLayer.add(cornerAnim, forKey: #keyPath(CAShapeLayer.cornerRadius))
     let elevation: CGFloat = CGFloat(endView.elevation)
-    /*animateMask(for: penumbra, shadowType: ShadowType.penumbra(elevation))
-     animateShadowPath(for: penumbra, size: size, duration: firstAnimationDuration, radius: radius)
-     animateMask(for: umbra, shadowType: ShadowType.umbra(elevation))
-     animateShadowPath(for: umbra, size: size, duration: firstAnimationDuration, radius: radius)
-     animateMask(for: ambient, shadowType: ShadowType.ambient(elevation))
-     animateShadowPath(for: ambient, size: size, duration: firstAnimationDuration, radius: radius)*/
+    animateMask(for: penumbra, shadowType: ShadowType.penumbra(elevation))
+    animateShadowPath(for: penumbra, size: size, duration: firstAnimationDuration, radius: radius)
+    animateMask(for: umbra, shadowType: ShadowType.umbra(elevation))
+    animateShadowPath(for: umbra, size: size, duration: firstAnimationDuration, radius: radius)
+    animateMask(for: ambient, shadowType: ShadowType.ambient(elevation))
+    animateShadowPath(for: ambient, size: size, duration: firstAnimationDuration, radius: radius)
     CATransaction.commit()
   }
   
@@ -153,26 +186,27 @@ open class MaskedAnimation: CALayer {
     CATransaction.setCompletionBlock {
       self.animateToDiameter()
     }
-    let boundsAnim: CABasicAnimation = createAnim(from: size,
-                                                  to: endView.frame.size,
-                                                  withDuration: secondAnimationDuration,
-                                                  andKeyPath: "bounds.size")
+    let boundsProp: AnimationProperties =
+      AnimationProperties.boundsAnim(from: size,
+                                     to: endView.frame.size,
+                                     duration: secondAnimationDuration)
+    let boundsAnim: CABasicAnimation = createAnim(withProperties: boundsProp)
     animationLayer.add(boundsAnim, forKey: "bounds.size")
-    /*animateShadowPath(for: penumbra,
-     size: endView.bounds.size,
-     duration: secondAnimationDuration,
-     radius: smaller / 2)
-     animateLargeMask(for: penumbra, shadowType: ShadowType.penumbra(elevation))
-     animateShadowPath(for: umbra,
-     size: endView.bounds.size,
-     duration: secondAnimationDuration,
-     radius: smaller / 2)
-     animateLargeMask(for: umbra, shadowType: ShadowType.umbra(elevation))
-     animateShadowPath(for: ambient,
-     size: endView.bounds.size,
-     duration: secondAnimationDuration,
-     radius: smaller / 2)
-     animateLargeMask(for: ambient, shadowType: ShadowType.ambient(elevation))*/
+    animateShadowPath(for: penumbra,
+                      size: endView.bounds.size,
+                      duration: secondAnimationDuration,
+                      radius: smaller / 2)
+    animateLargeMask(for: penumbra, shadowType: ShadowType.penumbra(elevation))
+    animateShadowPath(for: umbra,
+                      size: endView.bounds.size,
+                      duration: secondAnimationDuration,
+                      radius: smaller / 2)
+    animateLargeMask(for: umbra, shadowType: ShadowType.umbra(elevation))
+    animateShadowPath(for: ambient,
+                      size: endView.bounds.size,
+                      duration: secondAnimationDuration,
+                      radius: smaller / 2)
+    animateLargeMask(for: ambient, shadowType: ShadowType.ambient(elevation))
     CATransaction.commit()
   }
   
@@ -185,17 +219,18 @@ open class MaskedAnimation: CALayer {
     CATransaction.setCompletionBlock {
       self.finish()
     }
-    let cornerAnim: CABasicAnimation = createAnim(from: smaller / 2,
-                                                  to: endView.layer.cornerRadius,
-                                                  withDuration: thirdAnimationDuration,
-                                                  andKeyPath: #keyPath(CAShapeLayer.cornerRadius))
+    let cornerProp: AnimationProperties =
+      AnimationProperties.cornerAnim(from: smaller / 2,
+                                     to: endView.layer.cornerRadius,
+                                     duration: thirdAnimationDuration)
+    let cornerAnim: CABasicAnimation = createAnim(withProperties: cornerProp)
     animationLayer.add(cornerAnim, forKey: #keyPath(CAShapeLayer.cornerRadius))
-    /*animateShadowPath(for: penumbra, size: size, duration: thirdAnimationDuration, radius: radius)
-     animateDiameterMask(for: penumbra, shadowType: ShadowType.penumbra(elevation))
-     animateShadowPath(for: umbra, size: size, duration: thirdAnimationDuration, radius: radius)
-     animateDiameterMask(for: umbra, shadowType: ShadowType.umbra(elevation))
-     animateShadowPath(for: ambient, size: size, duration: thirdAnimationDuration, radius: radius)
-     animateDiameterMask(for: ambient, shadowType: ShadowType.ambient(elevation))*/
+    animateShadowPath(for: penumbra, size: size, duration: thirdAnimationDuration, radius: radius)
+    animateDiameterMask(for: penumbra, shadowType: ShadowType.penumbra(elevation))
+    animateShadowPath(for: umbra, size: size, duration: thirdAnimationDuration, radius: radius)
+    animateDiameterMask(for: umbra, shadowType: ShadowType.umbra(elevation))
+    animateShadowPath(for: ambient, size: size, duration: thirdAnimationDuration, radius: radius)
+    animateDiameterMask(for: ambient, shadowType: ShadowType.ambient(elevation))
     CATransaction.commit()
   }
   
@@ -230,17 +265,19 @@ open class MaskedAnimation: CALayer {
   
   //swiftlint:disable:next identifier_name
   private func animateShadows(for layer: CAShapeLayer, from: ShadowProperties, to: ShadowProperties) {
-    let radiusAnimation: CABasicAnimation = createAnim(from: from.blur,
-                                                       to: to.blur,
-                                                       withDuration: totalTime,
-                                                       andKeyPath: #keyPath(CAShapeLayer.shadowRadius))
+    let radiusProp: AnimationProperties = AnimationProperties(from: from.blur,
+                                                              to: to.blur,
+                                                              duration: totalTime,
+                                                              keyPath: #keyPath(CAShapeLayer.shadowRadius))
+    let radiusAnimation: CABasicAnimation = createAnim(withProperties: radiusProp)
     layer.add(radiusAnimation, forKey: #keyPath(CAShapeLayer.shadowRadius))
     let fromSize = CGSize(width: 0, height: from.offset)
     let toSize = CGSize(width: 0, height: to.offset)
-    let offsetAnimation: CABasicAnimation = createAnim(from: fromSize,
-                                                       to: toSize,
-                                                       withDuration: totalTime,
-                                                       andKeyPath: #keyPath(CAShapeLayer.shadowOffset))
+    let animProp: AnimationProperties = AnimationProperties(from: fromSize,
+                                                            to: toSize,
+                                                            duration: totalTime,
+                                                            keyPath: #keyPath(CAShapeLayer.shadowOffset))
+    let offsetAnimation: CABasicAnimation = createAnim(withProperties: animProp)
     layer.add(offsetAnimation, forKey: #keyPath(CAShapeLayer.shadowOffset))
   }
   
@@ -254,114 +291,107 @@ open class MaskedAnimation: CALayer {
       path = UIBezierPath(rect: rect)
     }
     guard let shadowPath = layer.shadowPath else { return }
-    let anim: CABasicAnimation = createAnim(from: shadowPath,
-                                            to: path.cgPath,
-                                            withDuration: duration,
-                                            andKeyPath: "shadowPath")
+    let animProp: AnimationProperties = AnimationProperties(from: shadowPath,
+                                                            to: path.cgPath,
+                                                            duration: duration,
+                                                            keyPath: "shadowPath")
+    let anim: CABasicAnimation = createAnim(withProperties: animProp)
     layer.add(anim, forKey: "shadowPath")
   }
   
   //swiftlint:disable:next function_body_length
   private func animateMask(for layer: CAShapeLayer, shadowType: ShadowType) {
-    guard let mask = layer.mask as? CAShapeLayer else { return }
     let difference: CGFloat = smaller - startView.frame.width
     let bounds: CGRect = CGRect(x: 0,
                                 y: 0,
                                 width: startView.bounds.width + difference,
                                 height: startView.bounds.height + difference)
-    let outerPath: UIBezierPath
-    let outerRect: CGRect = CGRect(origin: CGPoint.zero, size: bounds.size)
-    if layer.cornerRadius > 0 {
-      outerPath = UIBezierPath(roundedRect: outerRect, cornerRadius: smaller / 2)
-    } else {
-      outerPath = UIBezierPath(rect: outerRect)
-    }
-    let innerSize: CGSize = MDShadowLayer.calculateSpread(metric: shadowType.metric)
-    let width: CGFloat = startView.frame.width + difference + (innerSize.width * 2)
-    let height: CGFloat = startView.frame.height + difference + (innerSize.height * 2)
+    let outerPath: UIBezierPath = createOuterPath(for: layer,
+                                                  bounds: bounds,
+                                                  radius: smaller / 2)
+    let innerRect: CGRect = createRect(from: startView.bounds.size,
+                                       for: shadowType.metric,
+                                       withDifference: difference)
     let innerPath: UIBezierPath
-    let innerRect: CGRect = CGRect(x: -innerSize.width,
-                                   y: -innerSize.height,
-                                   width: width,
-                                   height: height)
     if startView.layer.cornerRadius > 0 {
       innerPath = UIBezierPath(roundedRect: innerRect, cornerRadius: smaller / 2)
     } else {
       innerPath = UIBezierPath(rect: innerRect)
     }
-    outerPath.append(innerPath)
-    outerPath.usesEvenOddFillRule = true
-    guard let path = mask.path else { return }
-    let anim: CABasicAnimation = createAnim(from: path,
-                                            to: outerPath.cgPath,
-                                            withDuration: firstAnimationDuration,
-                                            andKeyPath: #keyPath(CAShapeLayer.path))
-    mask.add(anim, forKey: #keyPath(CAShapeLayer.path))
+    maskAnim(for: layer,
+             withDuration: firstAnimationDuration,
+             outerPath: outerPath,
+             innerPath: innerPath)
   }
   
   //swiftlint:disable:next function_body_length
   private func animateLargeMask(for layer: CAShapeLayer, shadowType: ShadowType) {
-    guard let mask = layer.mask as? CAShapeLayer else { return }
-    let outerPath: UIBezierPath
-    let outerRect: CGRect = CGRect(origin: CGPoint.zero, size: endView.bounds.size)
-    if layer.cornerRadius > 0 {
-      outerPath = UIBezierPath(roundedRect: outerRect, cornerRadius: smaller / 2)
-    } else {
-      outerPath = UIBezierPath(rect: outerRect)
-    }
-    let innerSize: CGSize = MDShadowLayer.calculateSpread(metric: shadowType.metric)
-    let width: CGFloat = endView.frame.width + innerSize.width * 2
-    let height: CGFloat = endView.frame.height + innerSize.height * 2
+    let outerPath: UIBezierPath = createOuterPath(for: layer,
+                                                  bounds: CGRect(origin: .zero,
+                                                                 size: endView.bounds.size),
+                                                  radius: smaller / 2)
+    let innerRect: CGRect = createRect(from: endView.frame.size, for: shadowType.metric)
     let innerPath: UIBezierPath
-    let innerRect: CGRect = CGRect(x: -innerSize.width,
-                                   y: -innerSize.height,
-                                   width: width,
-                                   height: height)
     if startView.layer.cornerRadius > 0 {
       innerPath = UIBezierPath(roundedRect: innerRect, cornerRadius: smaller / 2)
     } else {
       innerPath = UIBezierPath(rect: innerRect)
     }
-    outerPath.append(innerPath)
-    outerPath.usesEvenOddFillRule = true
-    guard let path = mask.path else { return }
-    let anim: CABasicAnimation = createAnim(from: path,
-                                            to: outerPath.cgPath,
-                                            withDuration: secondAnimationDuration,
-                                            andKeyPath: #keyPath(CAShapeLayer.path))
-    mask.add(anim, forKey: #keyPath(CAShapeLayer.path))
+    maskAnim(for: layer,
+             withDuration: secondAnimationDuration,
+             outerPath: outerPath,
+             innerPath: innerPath)
   }
   
   //swiftlint:disable:next function_body_length
   private func animateDiameterMask(for layer: CAShapeLayer, shadowType: ShadowType) {
-    guard let mask = layer.mask as? CAShapeLayer else { return }
-    let outerPath: UIBezierPath
-    let outerRect: CGRect = CGRect(origin: CGPoint.zero, size: endView.bounds.size)
-    if endView.layer.cornerRadius > 0 {
-      outerPath = UIBezierPath(roundedRect: outerRect, cornerRadius: endView.layer.cornerRadius)
-    } else {
-      outerPath = UIBezierPath(rect: outerRect)
-    }
-    let innerSize: CGSize = MDShadowLayer.calculateSpread(metric: shadowType.metric)
-    let width: CGFloat = endView.frame.width + innerSize.width * 2
-    let height: CGFloat = endView.frame.height + innerSize.height * 2
+    let outerPath: UIBezierPath = createOuterPath(for: layer,
+                                                  bounds: CGRect(origin: .zero,
+                                                                 size: endView.bounds.size),
+                                                  radius: endView.layer.cornerRadius)
+    let innerRect: CGRect = createRect(from: endView.frame.size, for: shadowType.metric)
     let innerPath: UIBezierPath
-    let innerRect: CGRect = CGRect(x: -innerSize.width,
-                                   y: -innerSize.height,
-                                   width: width,
-                                   height: height)
     if endView.layer.cornerRadius > 0 {
       innerPath = UIBezierPath(roundedRect: innerRect, cornerRadius: endView.layer.cornerRadius)
     } else {
       innerPath = UIBezierPath(rect: innerRect)
     }
+    maskAnim(for: layer,
+             withDuration: thirdAnimationDuration,
+             outerPath: outerPath,
+             innerPath: innerPath)
+  }
+  
+  private func createOuterPath(for layer: CAShapeLayer, bounds: CGRect, radius: CGFloat) -> UIBezierPath {
+    let outerPath: UIBezierPath
+    let outerRect: CGRect = CGRect(origin: CGPoint.zero, size: bounds.size)
+    if layer.cornerRadius > 0 {
+      outerPath = UIBezierPath(roundedRect: outerRect, cornerRadius: radius)
+    } else {
+      outerPath = UIBezierPath(rect: outerRect)
+    }
+    return outerPath
+  }
+  
+  private func createRect(from: CGSize, for spread: ShadowProperties, withDifference difference: CGFloat = 0) -> CGRect {
+    let innerSize: CGSize = MDShadowLayer.calculateSpread(metric: spread)
+    let width: CGFloat = from.width + difference + (innerSize.width * 2)
+    let height: CGFloat = from.height + difference + (innerSize.height * 2)
+    return CGRect(x: -innerSize.width, y: -innerSize.height, width: width, height: height)
+  }
+  
+  private func maskAnim(for layer: CAShapeLayer,
+                        withDuration duration: Double,
+                        outerPath: UIBezierPath,
+                        innerPath: UIBezierPath) {
+    guard let mask = layer.mask as? CAShapeLayer else { return }
     outerPath.append(innerPath)
     outerPath.usesEvenOddFillRule = true
     guard let path = mask.path else { return }
-    let anim: CABasicAnimation = createAnim(from: path,
-                                            to: outerPath.cgPath,
-                                            withDuration: thirdAnimationDuration,
-                                            andKeyPath: #keyPath(CAShapeLayer.path))
+    let prop: AnimationProperties = AnimationProperties.pathAnim(from: path,
+                                                                 to: outerPath.cgPath,
+                                                                 duration: duration)
+    let anim: CABasicAnimation = createAnim(withProperties: prop)
     mask.add(anim, forKey: #keyPath(CAShapeLayer.path))
   }
   
@@ -372,11 +402,11 @@ open class MaskedAnimation: CALayer {
     animation.fillMode = kCAFillModeForwards
   }
   
-  private func createAnim(from: Any, to: Any, withDuration duration: Double, andKeyPath keyPath: String) -> CABasicAnimation {
-    let anim: CABasicAnimation = CABasicAnimation(keyPath: keyPath)
-    anim.fromValue = from
-    anim.toValue = to
-    animationStandard(for: anim, duration: duration)
+  private func createAnim(withProperties properties: AnimationProperties) -> CABasicAnimation {
+    let anim: CABasicAnimation = CABasicAnimation(keyPath: properties.keyPath)
+    anim.fromValue = properties.from
+    anim.toValue = properties.to
+    animationStandard(for: anim, duration: properties.duration)
     return anim
   }
 }

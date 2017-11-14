@@ -232,9 +232,9 @@ open class MDShadowLayer: CAShapeLayer {
   }
   
   private func shadowSetup() {
-    //setup(layer: penumbra, shadowType: ShadowType.penumbra(CGFloat(elevation)))
-    //setup(layer: umbra, shadowType: ShadowType.umbra(CGFloat(elevation)))
-    //setup(layer: ambient, shadowType: ShadowType.ambient(CGFloat(elevation)))
+    setup(layer: penumbra, shadowType: ShadowType.penumbra(CGFloat(elevation)))
+    setup(layer: umbra, shadowType: ShadowType.umbra(CGFloat(elevation)))
+    setup(layer: ambient, shadowType: ShadowType.ambient(CGFloat(elevation)))
   }
   
   private func defaultShadowPath() -> UIBezierPath {
